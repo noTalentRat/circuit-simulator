@@ -8,6 +8,10 @@ Vision, decisions and the wiring spec live in the project's vision doc. The wiri
 
 ## Try it
 
+**Live:** https://notalentrat.github.io/circuit-simulator/ (updates on every push to `main`)
+
+Or run it locally:
+
 ```bash
 npm install
 npm run dev        # open the printed localhost link

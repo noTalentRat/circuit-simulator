@@ -5,6 +5,7 @@ Owner: noTalentRat. He designs and decides; Claude writes nearly all the code. H
 ## Sources of truth
 - **Vision doc** (Claude Doc "Circuit Simulator — Vision", https://claude.ai/artifact/DcDYLryiAMgmvYJbw2mtRJ): problem, decisions, Wiring spec v1, wiring case catalogue, build order and the status line. Update its status line at the end of a session.
 - **Wiring case catalogue** = `tests/wiring/catalogue.test.ts`. Same IDs (W01…). A new reported case goes into both, as a test first.
+- Live app (GitHub Pages, deployed by CI from main): https://notalentrat.github.io/circuit-simulator/
 - Wire spike prototype (reference only): https://claude.ai/artifact/KAcs8dMyC8ax4AtD2HctcK
 
 ## Rules
