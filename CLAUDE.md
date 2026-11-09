@@ -16,9 +16,15 @@ Owner: noTalentRat. He designs and decides; Claude writes nearly all the code. H
 5. Test first for wiring and engine behaviour: write the failing case, then change the code. Run `npm run verify` before every push.
 6. IEC first (designations S1, KM1, H1; symbols per IEC 60617). Keep symbol drawing separate so a NEMA set can be added.
 
-## Status (9 Nov 2026)
-Done: project setup, model, History, engine (pushbuttons, lamps, contactor coil + NO/NC contacts, self-holding, short and oscillation detection, fixed-step clock), wiring session + router with W01–W08, W10–W13 passing, Svelte shell that renders, simulates and wires.
-Todo in the catalogue: W09 and W01's pan/auto-pan (need the editor's pointer controller), W14 (v1.1).
+## Layout
+- `src/core` — model, History, engine, wiring router. No DOM.
+- `src/editor/editor.ts` — the sheet editor's pointer/keyboard behaviour, screen-free (selection, move, box select, wiring, reconnect, pan/zoom/auto-pan, clipboard). Tested in `tests/editor` and the catalogue.
+- `src/ui` — Svelte: thin canvas (`Sheet.svelte`) over the editor, palette, inspector, autosave (`storage.ts`, IndexedDB).
+- `tests/e2e` — browser tests (Playwright), run in CI. Locally: `npm run build && CHROME_PATH=/usr/bin/google-chrome npm run test:browser`.
 
-## Next (build order step 3, editor basics)
-Parts palette and placing, moving parts (wires follow), deleting, copy/paste at cursor, autosave to IndexedDB with a Saved label, browser tests (Playwright) for W09 and W01's pan.
+## Status (9 Nov 2026, version 0.2)
+Done: everything in 0.1 (model, History, engine with contactors and self-holding, router, W01–W13) plus editor basics: parts palette, moving parts (wires reroute), box select, delete, copy/paste at cursor, duplicate, reconnecting wire ends, tag editing (contacts link to their coil by tag), New / examples as undoable steps, IndexedDB autosave with a Saved label, browser tests in CI.
+Todo in the catalogue: W14 (wiring v1.1, chain mode).
+
+## Next (build order step 4, debugging)
+"Why is this off?" (click a load, trace from L, highlight the first open contact or break), loose-end warnings, then the first component set (thermal relay, motor, timers) for forward/reverse and star-delta.

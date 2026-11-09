@@ -1,96 +1,107 @@
-import {
-  History,
-  Simulator,
-  addWire,
-  lampExample,
-  setLocale,
-  startStopExample,
-  terminalLabel,
-  type CircuitDoc,
-  type HistoryEntry,
-  type Locale,
-  type SimResult,
-  type TerminalRef,
-  type Point,
-} from '../core'
+import { History, Simulator, emptyDoc, lampExample, setLocale, startStopExample, type CircuitDoc, type HistoryEntry, type Locale, type MessageKey, type SimResult } from '../core'
+import { Editor } from '../editor/editor'
+import { save } from './storage'
 
-export const EXAMPLES = {
-  lamp: { labelKey: 'example.lamp', make: lampExample },
-  startStop: { labelKey: 'example.startStop', make: startStopExample },
-} as const
-export type ExampleId = keyof typeof EXAMPLES
+export const EXAMPLES: Array<{ id: string; labelKey: MessageKey; make: () => CircuitDoc }> = [
+  { id: 'startStop', labelKey: 'example.startStop', make: startStopExample },
+  { id: 'lamp', labelKey: 'example.lamp', make: lampExample },
+]
+
+export type SaveState = { kind: 'restored' } | { kind: 'saving' } | { kind: 'saved'; at: Date } | { kind: 'error' } | { kind: 'fresh' }
+
+const SAVE_DELAY_MS = 400
+const LOCALE_KEY = 'circuit-simulator-locale'
 
 /**
- * The UI's view of the app: one History (the only way to change the circuit) and one Simulator.
- * `rev` ticks after every change so Svelte knows to redraw; the document itself is plain data.
+ * The UI's view of the app: one History (the only way the circuit changes), one Simulator,
+ * one Editor (pointer and keyboard behaviour), and autosave. `rev` ticks whenever anything
+ * the screen shows has changed, so Svelte redraws.
  */
-class AppState {
-  history: History
-  sim: Simulator
+export class AppState {
+  readonly history: History
+  readonly sim: Simulator
+  readonly editor: Editor
   rev = $state(0)
   result = $state.raw<SimResult>(null as unknown as SimResult)
   entries = $state.raw<HistoryEntry[]>([])
-  selected = $state<{ kind: 'part' | 'wire'; id: string } | null>(null)
   locale = $state<Locale>('en')
-  example = $state<ExampleId>('startStop')
+  saveState = $state<SaveState>({ kind: 'fresh' })
+  private saveTimer: ReturnType<typeof setTimeout> | null = null
 
-  constructor() {
-    this.history = new History(EXAMPLES[this.example].make())
+  constructor(doc: CircuitDoc, restored: boolean) {
+    this.history = new History(doc)
     this.sim = new Simulator(this.history.doc)
-    this.wire()
-  }
-
-  get doc(): CircuitDoc {
-    return this.history.doc
-  }
-
-  private wire(): void {
-    this.history.onChange(() => this.refresh())
+    this.editor = new Editor(this.history, this.sim)
+    if (restored) this.saveState = { kind: 'restored' }
+    this.history.onChange(() => {
+      this.sim.update()
+      this.scheduleSave()
+      this.refresh()
+    })
+    this.editor.onChange(() => this.refresh())
+    try {
+      const l = localStorage.getItem(LOCALE_KEY)
+      if (l === 'en' || l === 'es') this.setLocale(l)
+    } catch {
+      /* storage blocked: stay in English */
+    }
     this.refresh()
   }
 
-  /** Re-solve and redraw. Call after anything the engine or the canvas depends on changes. */
-  refresh(result: SimResult = this.sim.update()): void {
-    this.result = result
+  refresh(): void {
+    this.result = this.sim.result
     this.entries = this.history.entries()
-    if (this.selected && !(this.selected.kind === 'part' ? this.doc.parts[this.selected.id] : this.doc.wires[this.selected.id])) this.selected = null
     this.rev++
-  }
-
-  loadExample(id: ExampleId): void {
-    this.example = id
-    this.history = new History(EXAMPLES[id].make())
-    this.sim = new Simulator(this.history.doc)
-    this.selected = null
-    this.wire()
   }
 
   setLocale(l: Locale): void {
     setLocale(l)
     this.locale = l
+    document.documentElement.lang = l
+    try {
+      localStorage.setItem(LOCALE_KEY, l)
+    } catch {
+      /* not remembered, fine */
+    }
     this.rev++
   }
 
-  press(id: string): void {
-    this.refresh(this.sim.press(id))
-  }
-  release(id: string): void {
-    this.refresh(this.sim.release(id))
+  newSheet(): void {
+    this.editor.loadSheet(emptyDoc(), 'New sheet')
   }
 
-  connect(a: TerminalRef, b: TerminalRef, via: Point[]): boolean {
-    const { changes } = addWire(this.doc, a, b, via)
-    if (!changes.length) return false
-    this.history.commit(`Wire ${terminalLabel(this.doc, a)} – ${terminalLabel(this.doc, b)}`, changes)
-    return true
+  loadExample(id: string): void {
+    const ex = EXAMPLES.find((e) => e.id === id)
+    if (ex) this.editor.loadSheet(ex.make(), `Open example: ${id}`)
   }
 
-  undo(): void {
-    this.history.undo()
+  private scheduleSave(): void {
+    if (this.saveTimer) clearTimeout(this.saveTimer)
+    this.saveState = { kind: 'saving' }
+    this.saveTimer = setTimeout(() => void this.saveNow(), SAVE_DELAY_MS)
   }
-  redo(): void {
-    this.history.redo()
+
+  /** Save right away (also called when the tab is hidden or closed). */
+  async saveNow(): Promise<void> {
+    if (this.saveTimer) clearTimeout(this.saveTimer)
+    this.saveTimer = null
+    try {
+      await save(this.history.doc)
+      this.saveState = { kind: 'saved', at: new Date() }
+    } catch {
+      this.saveState = { kind: 'error' }
+    }
+  }
+
+  get unsaved(): boolean {
+    return this.saveState.kind === 'saving'
   }
 }
 
-export const app = new AppState()
+/** Set once in main.ts, after the saved sheet has been read. */
+export let app: AppState
+
+export function initApp(doc: CircuitDoc, restored: boolean): AppState {
+  app = new AppState(doc, restored)
+  return app
+}

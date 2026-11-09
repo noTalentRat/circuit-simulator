@@ -1,10 +1,11 @@
 /**
  * Wiring case catalogue — every case reported during the wire spike, as an automated scenario.
  * Source of truth: the "Wiring case catalogue" section of the vision doc. Same IDs here and there.
- * A case that needs the on-screen editor (pointer controller, selection) is a `todo` until the editor exists.
+ * Cases that need pointer and selection behaviour drive the editor (src/editor) the same way, with no screen.
  */
 import { describe, expect, it } from 'vitest'
-import { STUB, WiringSession, type Point } from '../../src/core'
+import { STUB, WiringSession, lampExample, terminalLabel, type Point } from '../../src/core'
+import { setup } from '../editor/setup'
 import { bodiesCrossed, foreignTerminalsTouched, gesture, label, nextTime, orthogonalOnGrid, pos, ref, sharedSteps, sheet } from './helpers'
 
 describe('W01 — long wire run across the sheet (0.1)', () => {
@@ -42,8 +43,40 @@ describe('W01 — long wire run across the sheet (0.1)', () => {
     expect(label(doc, s.attached)).toBe('H1:X1')
   })
 
-  it.todo('pan (drag empty space) and auto-pan near the canvas edge work mid-run — editor')
 })
+
+describe('W01 — long wire run: pan and auto-pan mid-run (0.1)', () => {
+  it('during click-click wiring, dragging empty space pans and the run carries on', () => {
+    const { ed, click, drag } = setup()
+    click(260, 100) // Q1:L: quick press-release = click-click wiring
+    expect(ed.sessionMode).toBe('click')
+    drag({ x: 600, y: 500 }, { x: 500, y: 400 })
+    expect(ed.view.ox).toBe(100)
+    expect(ed.view.oy).toBe(100)
+    expect(ed.session).not.toBeNull()
+    expect(ed.session!.corners).toEqual([]) // a pan is not a click: no corner placed
+  })
+
+  it('near the canvas edge the view scrolls on its own, and the run follows', () => {
+    const { ed, click, moveTo } = setup()
+    click(260, 100)
+    moveTo(795, 300)
+    expect(ed.autoPanVelocity()!.x).toBeGreaterThan(0)
+    const before = ed.view.ox
+    ed.tick(100)
+    expect(ed.view.ox).toBeGreaterThan(before)
+    expect(ed.session!.cursor.x).toBeGreaterThan(795)
+  })
+
+  it('zooming mid-run keeps the run going', () => {
+    const { ed, click } = setup()
+    click(260, 100)
+    ed.wheel({ x: 400, y: 300 }, -200, 1000)
+    expect(ed.view.z).toBeGreaterThan(1)
+    expect(ed.session).not.toBeNull()
+  })
+})
+
 
 describe('W02 — aiming at a terminal from a distance (0.1)', () => {
   const doc = sheet([
@@ -173,7 +206,38 @@ describe('W08 — target directly below another part: S6:1 under S2 (0.4 case 2)
 })
 
 describe('W09 — click a terminal where a selected wire ends (0.4)', () => {
-  it.todo('starts a new wire; only a drag moves the existing end — editor pointer controller')
+  it('a click starts a new wire from that terminal; the selected wire is untouched', () => {
+    const { ed, click, wires } = setup()
+    click(260, 290) // on wire w2, S1:4 – H1:X1
+    expect([...ed.selection.wires]).toEqual(['w2'])
+    click(260, 320) // H1:X1, where w2 ends
+    expect(ed.session).not.toBeNull()
+    expect(ed.sessionMode).toBe('click')
+    expect(ed.reconnecting).toBeNull()
+    expect(terminalLabel(ed.doc, ed.session!.from)).toBe('H1:X1')
+    expect(wires()).toHaveLength(3)
+    expect(ed.doc.wires.w2).toEqual(lampExample().wires.w2)
+  })
+
+  it('only a drag from there moves the existing end, as one undo step', () => {
+    const { ed, history, click, drag, wires } = setup()
+    click(260, 290)
+    drag({ x: 260, y: 320 }, { x: 460, y: 282 }) // H1:X1 end → S2:2
+    expect(wires()).toHaveLength(3)
+    const w2 = ed.doc.wires.w2!
+    expect(terminalLabel(ed.doc, w2.a)).toBe('S1:4')
+    expect(terminalLabel(ed.doc, w2.b)).toBe('S2:2')
+    history.undo()
+    expect(ed.doc.wires.w2).toEqual(lampExample().wires.w2)
+  })
+
+  it('dropping a dragged end on nothing puts it back', () => {
+    const { ed, click, drag } = setup()
+    click(260, 290)
+    drag({ x: 260, y: 320 }, { x: 640, y: 520 })
+    expect(ed.doc.wires.w2).toEqual(lampExample().wires.w2)
+    expect(ed.session).toBeNull()
+  })
 })
 
 describe('W10 — over H4, nearer X1, X1 already wired (0.6 case 1)', () => {

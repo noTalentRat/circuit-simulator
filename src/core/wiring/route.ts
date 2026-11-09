@@ -70,7 +70,8 @@ export interface Obstacles {
   wirePoints: Set<string>
 }
 
-export function obstacles(doc: CircuitDoc, ends: readonly TerminalRef[], ignoreWire?: string): Obstacles {
+export function obstacles(doc: CircuitDoc, ends: readonly TerminalRef[], ignore: string | ReadonlySet<string> = new Set()): Obstacles {
+  const ignored = typeof ignore === 'string' ? new Set([ignore]) : ignore
   const bodies: Rect[] = []
   const padded: Rect[] = []
   for (const part of Object.values(doc.parts)) {
@@ -83,9 +84,10 @@ export function obstacles(doc: CircuitDoc, ends: readonly TerminalRef[], ignoreW
   const wireEdges = new Set<string>()
   const wirePoints = new Set<string>()
   for (const w of Object.values(doc.wires)) {
-    if (w.id === ignoreWire) continue
+    if (ignored.has(w.id)) continue
     const pts = wirePath(doc, w)
-    if (!pts) continue
+    // A wire with a diagonal leg (damaged corners) is skipped rather than allowed to break routing.
+    if (!pts || pts.some((p, i) => i > 0 && p.x !== pts[i - 1]!.x && p.y !== pts[i - 1]!.y)) continue
     const edges = unitEdges(pts)
     const sharesA = ends.some((e) => sameTerminal(e, w.a))
     const sharesB = ends.some((e) => sameTerminal(e, w.b))
