@@ -1,0 +1,107 @@
+/**
+ * Every piece of interface text goes through t(). No label is written straight into the UI,
+ * so a new language is just a new table. English is the base: a key missing from another table falls back to it.
+ */
+
+const en = {
+  'app.name': 'Circuit Simulator',
+  'part.supply': 'Supply 230 V~',
+  'part.pbNo': 'Pushbutton, NO',
+  'part.pbNc': 'Pushbutton, NC',
+  'part.lamp': 'Pilot lamp',
+  'part.kmCoil': 'Contactor coil',
+  'part.kmNo': 'Contactor contact, NO',
+  'part.kmNc': 'Contactor contact, NC',
+  'state.on': 'On',
+  'state.off': 'Off',
+  'state.pressed': 'Pressed',
+  'state.closed': 'Closed',
+  'state.open': 'Open',
+  'sim.short': 'Short circuit: live and neutral touch without a load. The supply has tripped.',
+  'sim.oscillating': 'The circuit never settles: a relay keeps switching itself on and off.',
+  'sim.reset': 'Reset',
+  'sim.time': 'Sim time {seconds} s',
+  'example.lamp': 'Lamp',
+  'example.startStop': 'Start/stop',
+  'hint.press': 'Hold a pushbutton head to press it.',
+  'inspector.empty': 'Select a part to see its terminals and state.',
+  'inspector.terminals': 'Terminals',
+  'net.live': 'Live',
+  'net.neutral': 'Neutral',
+  'net.short': 'Short',
+  'net.none': 'Not powered',
+  'wiring.landing': '→ {terminal}',
+  'wiring.clickToLand': 'click → {terminal}',
+  'wiring.hintDrag': 'Release on a terminal to connect · Space flips the corner · Release elsewhere to cancel',
+  'wiring.hintClick': 'Click a terminal to connect · Click empty space for a corner · Space flips · Alt: no snapping · Backspace undoes a corner · Esc cancels',
+  'toolbar.undo': 'Undo',
+  'toolbar.redo': 'Redo',
+  'toolbar.fit': 'Fit',
+  'panel.history': 'History',
+  'panel.example': 'Example',
+  'hint.wire': 'Drag from a terminal to wire it, or click a terminal and then click where it should go.',
+  'state.coilOn': 'Pulled in',
+  'state.coilOff': 'Dropped out',
+  'wire.title': 'Wire',
+} as const
+
+export type MessageKey = keyof typeof en
+type Table = Partial<Record<MessageKey, string>>
+
+const es: Table = {
+  'app.name': 'Simulador de circuitos',
+  'part.supply': 'Alimentación 230 V~',
+  'part.pbNo': 'Pulsador NA',
+  'part.pbNc': 'Pulsador NC',
+  'part.lamp': 'Piloto de señalización',
+  'part.kmCoil': 'Bobina de contactor',
+  'part.kmNo': 'Contacto de contactor NA',
+  'part.kmNc': 'Contacto de contactor NC',
+  'state.on': 'Encendido',
+  'state.off': 'Apagado',
+  'state.pressed': 'Pulsado',
+  'state.closed': 'Cerrado',
+  'state.open': 'Abierto',
+  'sim.short': 'Cortocircuito: fase y neutro se tocan sin carga. La alimentación ha disparado.',
+  'sim.oscillating': 'El circuito no se estabiliza: un relé se conecta y desconecta solo.',
+  'sim.reset': 'Reiniciar',
+  'sim.time': 'Tiempo de simulación {seconds} s',
+  'example.lamp': 'Piloto',
+  'example.startStop': 'Marcha/paro',
+  'hint.press': 'Mantén pulsada la cabeza de un pulsador para accionarlo.',
+  'inspector.empty': 'Selecciona un componente para ver sus bornes y su estado.',
+  'inspector.terminals': 'Bornes',
+  'net.live': 'Fase',
+  'net.neutral': 'Neutro',
+  'net.short': 'Corto',
+  'net.none': 'Sin tensión',
+  'wiring.landing': '→ {terminal}',
+  'wiring.clickToLand': 'clic → {terminal}',
+  'wiring.hintDrag': 'Suelta sobre un borne para conectar · Espacio cambia la esquina · Suelta en otro sitio para cancelar',
+  'wiring.hintClick': 'Clic en un borne para conectar · Clic en vacío para una esquina · Espacio cambia · Alt: sin imán · Retroceso deshace una esquina · Esc cancela',
+  'toolbar.undo': 'Deshacer',
+  'toolbar.redo': 'Rehacer',
+  'toolbar.fit': 'Encuadrar',
+  'panel.history': 'Historial',
+  'panel.example': 'Ejemplo',
+  'hint.wire': 'Arrastra desde un borne para cablearlo, o haz clic en un borne y luego donde deba ir.',
+  'state.coilOn': 'Activada',
+  'state.coilOff': 'Desactivada',
+  'wire.title': 'Cable',
+}
+
+export const LOCALES = { en, es } as const satisfies Record<string, Table>
+export type Locale = keyof typeof LOCALES
+
+let current: Locale = 'en'
+export const setLocale = (l: Locale): void => {
+  current = l
+}
+export const getLocale = (): Locale => current
+
+/** Translate a key, filling {placeholders} from params. */
+export function t(key: MessageKey, params: Record<string, string | number> = {}, locale: Locale = current): string {
+  const table: Table = LOCALES[locale]
+  const text = table[key] ?? en[key]
+  return text.replace(/\{(\w+)\}/g, (_, name: string) => String(params[name] ?? `{${name}}`))
+}

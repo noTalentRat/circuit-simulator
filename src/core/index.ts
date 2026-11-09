@@ -1,0 +1,12 @@
+/** The app's core: everything that works without a screen. The UI, autosave, a web worker and auto-grading all use it. */
+export * from './geometry'
+export * from './library/definitions'
+export * from './model/document'
+export * from './model/examples'
+export * from './commands/history'
+export * from './commands/edits'
+export * from './engine/simulate'
+export * from './wiring/constants'
+export * from './wiring/route'
+export * from './wiring/session'
+export * from './i18n'
