@@ -28,11 +28,10 @@ What we build is not new; the experience is. A tool that feels good to build wit
 - `src/ui` — Svelte: thin canvas (`Sheet.svelte`) over the editor, palette, inspector, autosave (`storage.ts`, IndexedDB).
 - `tests/e2e` — browser tests (Playwright), run in CI. Locally: `npm run build && CHROME_PATH=/usr/bin/google-chrome npm run test:browser`.
 
-## Status (9 Nov 2026, version 0.2)
-Done: everything in 0.1 (model, History, engine with contactors and self-holding, router, W01–W13) plus editor basics: parts palette, moving parts (wires reroute), box select, delete, copy/paste at cursor, duplicate, reconnecting wire ends, tag editing (contacts link to their coil by tag), New / examples as undoable steps, IndexedDB autosave with a Saved label, browser tests in CI.
+## Status (9 Nov 2026, version 0.2.1)
+Done: everything in 0.1 (model, History, engine with contactors and self-holding, router, W01–W13) plus editor basics: parts palette, moving parts (wires reroute), box select, delete, copy/paste at cursor, duplicate, reconnecting wire ends, tag editing (contacts link to their coil by tag), New / examples as undoable steps, IndexedDB autosave with a Saved label, browser tests in CI. 0.2.1: drag on empty space selects; scroll / Space + drag / middle button move the view; Ctrl + scroll or pinch zooms.
 Todo in the catalogue: W14 (wiring v1.1, chain mode).
 
 ## Next
-First: drag on empty space selects an area; the view moves with scroll / Space + drag / middle-button drag, Ctrl + scroll zooms (decided 9 Nov). During a wire run a drag still pans (W01).
-A design-language session is planned before the interface grows much further (see Open questions in the vision doc).
+First: a design-language session is planned before the interface grows much further (see Open questions in the vision doc).
 Then build order step 4, debugging: "Why is this off?" (click a load, trace from L, highlight the first open contact or break), loose-end warnings, then the first component set (thermal relay, motor, timers) for forward/reverse and star-delta.

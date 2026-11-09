@@ -68,10 +68,10 @@ describe('W01 — long wire run: pan and auto-pan mid-run (0.1)', () => {
     expect(ed.session!.cursor.x).toBeGreaterThan(795)
   })
 
-  it('zooming mid-run keeps the run going', () => {
+  it('zooming (Ctrl + scroll) mid-run keeps the run going', () => {
     const { ed, click } = setup()
     click(260, 100)
-    ed.wheel({ x: 400, y: 300 }, -200, 1000)
+    ed.wheel({ x: 400, y: 300 }, 0, -200, 1000, { ctrl: true })
     expect(ed.view.z).toBeGreaterThan(1)
     expect(ed.session).not.toBeNull()
   })

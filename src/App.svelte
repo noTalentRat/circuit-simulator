@@ -38,7 +38,7 @@
         <path d="M9.2 14H18.8" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" />
         <circle cx="22" cy="14" r="3.2" fill="var(--ink)" />
       </svg>
-      <b>{tr('app.name')}</b><span class="sub">0.2</span>
+      <b>{tr('app.name')}</b><span class="sub">0.2.1</span>
     </div>
 
     <div class="tools">

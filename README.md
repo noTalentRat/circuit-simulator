@@ -21,10 +21,10 @@ npm run dev        # open the printed localhost link
 - **Wire:** drag from a terminal to another one, or click a terminal and then click where the wire should go (click empty space to place a corner).
 - While wiring: <kbd>Space</kbd> flips the corner, <kbd>Alt</kbd> turns snapping off, <kbd>Backspace</kbd> removes the last corner, <kbd>Esc</kbd> cancels.
 - **Add a part:** click it in the Parts list; it lands in the middle of the view, selected. Drag parts to move them; their wires follow.
-- **Select:** click a part or wire; <kbd>Shift</kbd>-click adds; <kbd>Shift</kbd>-drag on empty space selects an area. <kbd>Delete</kbd> removes, <kbd>Ctrl C</kbd> / <kbd>Ctrl V</kbd> pastes at the cursor, <kbd>Ctrl D</kbd> duplicates.
+- **Select:** click a part or wire; drag on empty space to select an area. <kbd>Shift</kbd> adds to the selection. <kbd>Delete</kbd> removes, <kbd>Ctrl C</kbd> / <kbd>Ctrl V</kbd> pastes at the cursor, <kbd>Ctrl D</kbd> duplicates.
 - **Move a wire's end:** select the wire, then drag its end to another terminal.
 - **Link a contact to its coil:** give them the same tag (KM1) in the inspector.
-- <kbd>Ctrl Z</kbd> / <kbd>Ctrl Shift Z</kbd> undo and redo. Scroll to zoom, drag empty space to pan.
+- <kbd>Ctrl Z</kbd> / <kbd>Ctrl Shift Z</kbd> undo and redo. Scroll (or hold <kbd>Space</kbd> and drag, or drag with the middle button) to move around; <kbd>Ctrl</kbd> + scroll or a pinch zooms.
 
 ## Checks
 

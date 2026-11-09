@@ -61,8 +61,8 @@ const en = {
   'save.fresh': 'Changes save automatically in this browser',
   'status.counts': 'Parts {parts} · Wires {wires}',
   'shortcuts.title': 'Shortcuts',
-  'shortcuts.pan': 'Drag empty space to move around; scroll to zoom',
-  'shortcuts.select': 'Shift-drag on empty space to select an area',
+  'shortcuts.pan': 'Scroll, or hold Space and drag, to move around; Ctrl + scroll zooms',
+  'shortcuts.select': 'Drag on empty space to select an area; Shift adds to the selection',
   'shortcuts.clipboard': 'Ctrl C, Ctrl V pastes at the cursor, Ctrl D duplicates',
   'shortcuts.delete': 'Delete removes the selection; Ctrl Z undoes',
 } as const
@@ -128,8 +128,8 @@ const es: Table = {
   'save.fresh': 'Los cambios se guardan solos en este navegador',
   'status.counts': 'Componentes {parts} · Cables {wires}',
   'shortcuts.title': 'Atajos',
-  'shortcuts.pan': 'Arrastra el espacio vacío para moverte; la rueda hace zoom',
-  'shortcuts.select': 'Mayús + arrastrar en vacío selecciona una zona',
+  'shortcuts.pan': 'Rueda, o Espacio + arrastrar, para moverte; Ctrl + rueda hace zoom',
+  'shortcuts.select': 'Arrastra en vacío para seleccionar una zona; Mayús añade a la selección',
   'shortcuts.clipboard': 'Ctrl C, Ctrl V pega en el cursor, Ctrl D duplica',
   'shortcuts.delete': 'Supr elimina la selección; Ctrl Z deshace',
 }

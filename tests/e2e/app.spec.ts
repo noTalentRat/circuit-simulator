@@ -69,6 +69,22 @@ test('dragging a part moves it with its wires', async ({ page }) => {
   await expect(page.locator('path.wire')).toHaveCount(8)
 })
 
+test('dragging on empty space selects an area; the middle button moves the view', async ({ page }) => {
+  const viewBox = () => page.evaluate(() => (document.querySelector('svg[role=application]') as SVGSVGElement).viewBox.baseVal.x)
+  const before = await viewBox()
+  await dragWorld(page, [100, 120], [250, 345]) // around S2 and S1 only
+  await expect(page.locator('.insp')).toContainText('Selected: parts 2, wires 1')
+  expect(await viewBox()).toBe(before)
+
+  const box = (await page.locator('svg[role=application]').boundingBox())!
+  const a = { x: box.x + box.width * 0.8, y: box.y + box.height * 0.5 } // inside the canvas, whatever the zoom
+  await page.mouse.move(a.x, a.y)
+  await page.mouse.down({ button: 'middle' })
+  await page.mouse.move(a.x - 100, a.y, { steps: 10 })
+  await page.mouse.up({ button: 'middle' })
+  expect(await viewBox()).toBeGreaterThan(before)
+})
+
 test('drawing a wire by dragging between two terminals', async ({ page }) => {
   await page.locator('summary', { hasText: 'Examples' }).click()
   await page.getByRole('menuitem', { name: 'Lamp' }).click()

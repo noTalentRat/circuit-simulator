@@ -44,6 +44,8 @@ export interface Mods {
   shift?: boolean
   alt?: boolean
   ctrl?: boolean
+  /** The press should move the view whatever is under it (middle mouse button). */
+  pan?: boolean
 }
 
 export interface Viewport {
@@ -100,6 +102,8 @@ export class Editor {
   private lastScreen: Point | null = null
   private lastTime = 0
   private altHeld = false
+  /** Space is held: a drag moves the view instead of selecting (a quasimode: it lasts only while held). */
+  spaceHeld = false
   private listeners = new Set<() => void>()
   private moveCache: { key: string; doc: CircuitDoc } | null = null
 
@@ -231,14 +235,17 @@ export class Editor {
       this.drag = { kind: 'pan', sx: s.x, sy: s.y, ox: this.view.ox, oy: this.view.oy, panned: false, duringWiring: true }
       return
     }
+    // Middle button or Space held: grab the sheet, whatever is under the pointer.
+    if (mods.pan || this.spaceHeld) {
+      this.drag = { kind: 'pan', sx: s.x, sy: s.y, ox: this.view.ox, oy: this.view.oy, panned: false, duringWiring: false }
+      this.emit()
+      return
+    }
     const hit = this.hitTest(w)
     this.hoverNet = null
     if (!hit) {
-      if (mods.shift) this.drag = { kind: 'box', from: w, to: w, additive: true }
-      else {
-        this.clearSelection()
-        this.drag = { kind: 'pan', sx: s.x, sy: s.y, ox: this.view.ox, oy: this.view.oy, panned: false, duringWiring: false }
-      }
+      // Drag on empty space selects an area (Shift adds to the selection); a plain click there clears it.
+      this.drag = { kind: 'box', from: w, to: w, additive: !!mods.shift }
     } else if (hit.kind === 'pin') {
       this.clearSelection()
       this.startSession(hit.ref, w, t, s, 'drag')
@@ -366,8 +373,20 @@ export class Editor {
     }
   }
 
-  wheel(s: Point, deltaY: number, t: number): void {
-    this.zoomAt(s, this.view.z * Math.exp(-deltaY * 0.0015))
+  /**
+   * Scroll moves the view (both directions on a touchpad; Shift + wheel goes sideways).
+   * Ctrl + scroll zooms around the cursor; a touchpad pinch arrives as Ctrl + scroll too.
+   * Deltas are in screen pixels.
+   */
+  wheel(s: Point, deltaX: number, deltaY: number, t: number, mods: Mods = {}): void {
+    if (mods.ctrl) {
+      const step = Math.max(-60, Math.min(60, deltaY))
+      this.zoomAt(s, this.view.z * Math.exp(-step * 0.004))
+    } else if (mods.shift && deltaX === 0) {
+      this.panBy(deltaY, 0)
+    } else {
+      this.panBy(deltaX, deltaY)
+    }
     if (this.session) this.session.move(this.toWorld(s), t, { alt: this.altHeld })
     this.emit()
   }
@@ -491,6 +510,13 @@ export class Editor {
     const d = this.drag
     if (d?.kind !== 'box') return null
     return { left: Math.min(d.from.x, d.to.x), right: Math.max(d.from.x, d.to.x), top: Math.min(d.from.y, d.to.y), bottom: Math.max(d.from.y, d.to.y) }
+  }
+
+  /** Let go of Space (key released, or the window lost focus while it was held). */
+  releaseSpace(): void {
+    if (!this.spaceHeld) return
+    this.spaceHeld = false
+    this.emit()
   }
 
   get isPanning(): boolean {
@@ -622,6 +648,13 @@ export class Editor {
       this.emit()
       return true
     }
+    if (key === ' ') {
+      if (!this.spaceHeld) {
+        this.spaceHeld = true
+        this.emit()
+      }
+      return true
+    }
     if (mods.ctrl) {
       if (k === 'z' && mods.shift) this.redo()
       else if (k === 'z') this.undo()
@@ -650,6 +683,7 @@ export class Editor {
   }
 
   keyUp(key: string): void {
+    if (key === ' ') this.releaseSpace()
     if (key === 'Alt' && this.session) {
       this.altHeld = false
       if (this.cursor) this.session.move(this.cursor, this.lastTime, { alt: false })

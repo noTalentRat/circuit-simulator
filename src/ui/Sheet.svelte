@@ -57,9 +57,11 @@
   }
 
   function onDown(e: PointerEvent) {
-    if (e.button !== 0) return
+    if (e.button !== 0 && e.button !== 1) return
+    if (e.button === 1) e.preventDefault() // no browser auto-scroll on middle click
+    svgEl.focus({ preventScroll: true })
     svgEl.setPointerCapture(e.pointerId)
-    ed.down(local(e), e.timeStamp, mods(e))
+    ed.down(local(e), e.timeStamp, { ...mods(e), pan: e.button === 1 })
     afterEvent()
   }
   function onMove(e: PointerEvent) {
@@ -67,13 +69,16 @@
     afterEvent()
   }
   function onUp(e: PointerEvent) {
-    if (e.button !== 0) return
+    if (e.button !== 0 && e.button !== 1) return
     ed.up(local(e), e.timeStamp, mods(e))
     afterEvent()
   }
   function onWheel(e: WheelEvent) {
     e.preventDefault()
-    ed.wheel(local(e), e.deltaY, e.timeStamp)
+    // Some browsers report lines or pages instead of pixels.
+    const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? svgEl.clientHeight : 1
+    ed.wheel(local(e), e.deltaX * unit, e.deltaY * unit, e.timeStamp, mods(e))
+    afterEvent()
   }
   function typing(e: KeyboardEvent) {
     const el = e.target as HTMLElement | null
@@ -81,6 +86,11 @@
   }
   function onKey(e: KeyboardEvent) {
     if (typing(e)) return
+    // Space belongs to a focused button or menu (it presses it); on the sheet it grabs the view.
+    if (e.key === ' ' && !ed.session) {
+      const el = e.target as HTMLElement | null
+      if (el && el !== document.body && !svgEl.contains(el)) return
+    }
     if (ed.key(e.key, mods(e))) e.preventDefault()
     afterEvent()
   }
@@ -146,16 +156,19 @@
     }
   })
 
-  const cursorStyle = $derived((void app.rev, ed.isPanning ? 'grabbing' : ed.session ? 'crosshair' : 'default'))
+  const cursorStyle = $derived((void app.rev, ed.isPanning ? 'grabbing' : ed.spaceHeld ? 'grab' : ed.session ? 'crosshair' : 'default'))
 </script>
 
-<svelte:window onkeydown={onKey} onkeyup={onKeyUp} />
+<svelte:window onkeydown={onKey} onkeyup={onKeyUp} onblur={() => ed.releaseSpace()} />
 
 <div class="stage">
+  <!-- The sheet takes focus so Space can grab the view while a toolbar button keeps Space for itself. -->
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
   <svg
     bind:this={svgEl}
     role="application"
     aria-label="Schematic"
+    tabindex="0"
     style:cursor={cursorStyle}
     viewBox="{view.ox} {view.oy} {vw} {vh}"
     onpointerdown={onDown}
@@ -242,11 +255,15 @@
   }
   svg {
     display: block;
+    outline: none;
     width: 100%;
     height: 100%;
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
+  }
+  .stage:has(svg:focus-visible) {
+    box-shadow: inset 0 0 0 2px var(--accent);
   }
   .wire {
     fill: none;
